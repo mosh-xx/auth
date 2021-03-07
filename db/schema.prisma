@@ -1,0 +1,50 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("MOSH_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String    @id              @default(cuid())
+  type              String    @db.VarChar(32)  @default("User")
+  code              String    @db.VarChar(32)  @unique
+  login             String    @db.VarChar(32)  @unique
+  email             String    @db.VarChar(255) @unique
+  unconfirmed_email String    @db.VarChar(255)
+  password_digest   String    @db.VarChar(255)
+  refresh_token     String    @db.VarChar(255) @unique
+  display_name      String?   @db.VarChar(255)
+  avatar_url        String?   @db.VarChar(255)
+  homepage          String?   @db.VarChar(255)
+  bio               String?
+  inviter_id        String?
+  total_posts       Int       @default(0)
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  confirmed_at      DateTime?
+  closed_at         DateTime?
+  inviter           User?     @relation("UserRelation", fields: [inviter_id], references: [id])
+  invitee           User[]    @relation("UserRelation")
+  posts             Post[]
+
+  @@index(fields: [inviter_id, confirmed_at, closed_at])
+}
+
+model Post {
+  id           String    @id              @default(cuid())
+  slug         String    @db.VarChar(255) @unique
+  title        String    @db.VarChar(255)
+  body         String
+  raw          String
+  user_id      String
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+  published_at DateTime?
+  trashed_at   DateTime?
+  author       User      @relation(fields: [user_id], references: [id])
+
+  @@index(fields: [user_id, published_at, trashed_at])
+}
